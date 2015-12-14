@@ -200,7 +200,7 @@ access an invalid website
 Figure 2.3: Victim accessing an invalid website (It does not exist) and
 gets redirected to our website
 
-![](media/image6.png)
+![](media/image6.png) 
 
 ***Test 3 – DNS Spoofing With A Valid Website***
 
