@@ -4,14 +4,8 @@
 
 **COMP 8505**
 
-**A4**
 
-**DNS Spoofer**
 
-**\
-**
-
-Table of Contents
 
 Introduction
 ============
@@ -79,7 +73,7 @@ Requirements:
         specific tasks that most other tools can't handle, like sending
         invalid frames, injecting your own 802.11 frames, combining
         technics (VLAN hopping+ARP cache poisoning, VOIP decoding on WEP
-        encrypted channel, ...), etc. “
+        encrypted channel, ...), etc. “
 
 2.  This can be installed by running the command:
 
@@ -170,14 +164,13 @@ Psuedocode
 
 Tests
 =====
-
-  \#   Name                                Resource      Expected                                                Actual        Result   Figure
-  ---- ----------------------------------- ------------- ------------------------------------------------------- ------------- -------- ---------------
-  1    Arp Poison                          Dnsspoof.py   Arp poison the router and the victim machine            As Expected   Pass     1.1, 1.2
-  2    DNS Spoofing with invalid website   Dnsspoof.py   Victim connects to website specified by attacker        As Expected   Pass     2.1, 2.2, 2.3
-  3    DNS Spoofing with valid website     Dnsspoof.py   Victim connects to website specified by attacker        As Expected   Pass     3.1, 3.1, 3.3
-  4    Enable firewall                     Dnsspoof.py   Drop forwarding packets to the router from the victim   As Expected   Pass     4.1
-  5    No firewall rule                    Dnsspoof.py   No added firewall rule to drop packets to the router    As Expected   Pass     5.1
+| # | Name                              | Resource    | Expected                                              | Actual      | Result | Figure        |
+|---|-----------------------------------|-------------|-------------------------------------------------------|-------------|--------|---------------|
+| 1 | Arp Poison                        | Dnsspoof.py | Arp poison the router and the victim machine          | As Expected | Pass   | 1.1, 1.2      |
+| 2 | DNS Spoofing with invalid website | Dnsspoof.py | Victim connects to website specified by attacker      | As Expected | Pass   | 2.1, 2.2, 2.3 |
+| 3 | DNS Spoofing with valid website   | Dnsspoof.py | Victim connects to website specified by attacker      | As Expected | Pass   | 3.1, 3.1, 3.3 |
+| 4 | Enable firewall                   | Dnsspoof.py | Drop forwarding packets to the router from the victim | As Expected | Pass   | 4.1           |
+| 5 | No firewall rule                  | Dnsspoof.py | No added firewall rule to drop packets to the router  | As Expected | Pass   | 5.1           |
 
 Figures & Tests
 ===============
